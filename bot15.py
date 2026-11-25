@@ -11,6 +11,7 @@ SYMBOL = "XAU/USD"
 INTERVAL, TF_MIN, TF_LABEL = "15min", 15, "15m"
 DON, EMA_LEN, ATR_LEN = 40, 800, 14          # EMA800 on 15m = 1H EMA200
 SL_ATR, TRAIL_ATR, MAX_HOLD = 1.0, 2.0, 96
+MAX_RANGE_ATR = 2.0     # skip spike candles: signal candle range > 2 ATR (backtest: avgR +0.18 -> +0.28)
 ALLOW_BUY, ALLOW_SELL = True, True
 SESSION_ONLY = os.environ.get("SESSION", "0") == "1"   # 1 = only 07:00-17:00 UTC (12:00-22:00 PKT)
 NOTIFY_STOP_MOVES = True
@@ -98,6 +99,8 @@ def step(i, bars, ema, atr, st, notes):
     if recent and atr[i] < 0.6 * recent[len(recent) // 2]:
         return
     if SESSION_ONLY and not (7 <= t.hour < 17):
+        return
+    if (h - l) > MAX_RANGE_ATR * atr[i]:      # spike candle -> skip
         return
     hh = max(b[2] for b in bars[i - DON:i])
     ll = min(b[3] for b in bars[i - DON:i])
